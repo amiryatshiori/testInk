@@ -7,7 +7,8 @@
     <property name="builddir" value="./build" override="true" />
     <property name="sourcedir" value="${project.basedir}" override="true" />
     
-    <property name="htmlhead" value="xxx" override="true" />
+    <loadfile property="htmlhead" file="header.html" />
+    <loadfile property="htmlfooter" file="footer.html" />
     
     <fileset dir="${project.basedir}" id="allfiles">
         <include name="**" />
@@ -17,6 +18,8 @@
     
     <fileset dir="${project.basedir}" id="htmlfiles">
         <include name="**/*.html" />
+        <exclude name="header.html" />
+        <exclude name="footer.html" />
     </fileset>
 
     <fileset dir="${project.basedir}" id="nothtmlfiles">
@@ -43,19 +46,20 @@
             <fileset refid="htmlfiles" />
             <filterchain>
                 <replaceregexp>
-                    <regexp pattern="Dev Version:" replace="Build:${buildversion}"/>
+                    <regexp pattern="Dev Version" replace="Build:${buildversion}"/>
                 </replaceregexp>
             </filterchain>
             <filterchain>
                 <replacetokens begintoken="%%" endtoken="%%">
                 <token key="htmlhead" value="${htmlhead}" />
+                <token key="htmlfooter" value="${htmlfooter}" />
                 </replacetokens>
             </filterchain>
         </copy>
 
         <echo msg="Succeed!" />
     </target>
-    <target name="deploy" depends="build">
+    <target name="deploy">
         <echo msg="Deploying to ${deploydir} ..." />
         <copy todir="${deploydir}">
             <fileset refid="buildfiles" />
