@@ -9,6 +9,7 @@
     
     <loadfile property="htmlhead" file="header.html" />
     <loadfile property="htmlfooter" file="footer.html" />
+    <loadfile property="htmltopmenu" file="top-menu.html" />
     
     <fileset dir="${project.basedir}" id="allfiles">
         <include name="**" />
@@ -16,12 +17,18 @@
         <exclude name="build.xml" />
     </fileset>
     
-    <fileset dir="${project.basedir}" id="htmlfiles">
-        <include name="**/*.html" />
+    <fileset dir="${project.basedir}" id="htmlfiles-root">
+        <include name="*.html" />
         <exclude name="header.html" />
+        <exclude name="header-sub.html" />
         <exclude name="footer.html" />
+        <exclude name="top-menu.html" />
     </fileset>
-
+    <fileset dir="${project.basedir}" id="htmlfiles-sub">
+        <include name="*/*.html" />
+        <exclude name="build" />
+    </fileset>
+    
     <fileset dir="${project.basedir}" id="nothtmlfiles">
         <include name="**" />
         <exclude name="build" />
@@ -35,15 +42,60 @@
     
     
     <target name="build">
-        <echo msg="Clearing old build directory ${builddir} ..." />
-        <delete dir="${builddir}" />
+        <if>
+            <available file="${builddir}" type="dir" />
+            <then>
+                <echo msg="Clearing old build directory ${builddir} ..." />
+                <delete dir="${builddir}" />
+            </then>
+        </if>
+        <if>
+            <available file="header-sub.html" type="file" />
+            <then>
+                <echo msg="Deleting old header-sub.html ..." />
+                <delete file="header-sub.html" />
+            </then>
+        </if>
+        
+        <echo msg="Creating header-sub.html ..." />
+        <copy file="header.html" tofile="header-sub.html">
+            <filterchain>
+                <replaceregexp>
+                    <regexp pattern="href=&quot;css/" replace="href=&quot;../css/"/>
+                    <regexp pattern="src=&quot;js/" replace="src=&quot;../js/"/>
+                </replaceregexp>
+            </filterchain>
+        </copy>
+        <loadfile property="htmlheadsub" file="header-sub.html" />
+        
         <echo msg="Making ${builddir} ..." />
         <mkdir dir="${builddir}" />
+        
+        <echo msg="Copying non-html files ..." />
         <copy todir="${builddir}">
             <fileset refid="nothtmlfiles" />
         </copy>
+        
+        <echo msg="Copying html files from sub folders ..." />
         <copy todir="${builddir}">
-            <fileset refid="htmlfiles" />
+            <fileset refid="htmlfiles-sub" />
+            <filterchain>
+                <replaceregexp>
+                    <regexp pattern="Dev Version" replace="Build:${buildversion}"/>
+                </replaceregexp>
+            </filterchain>
+            <filterchain>
+                <replacetokens begintoken="%%" endtoken="%%">
+                <token key="htmlhead" value="${htmlheadsub}" />
+                <token key="htmlfooter" value="${htmlfooter}" />
+                <token key="htmltopmenu" value="${htmltopmenu}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+        
+        <echo msg="Copying html files from root ..." />
+        <copy todir="${builddir}">
+            <fileset refid="htmlfiles-root" />
             <filterchain>
                 <replaceregexp>
                     <regexp pattern="Dev Version" replace="Build:${buildversion}"/>
@@ -53,10 +105,11 @@
                 <replacetokens begintoken="%%" endtoken="%%">
                 <token key="htmlhead" value="${htmlhead}" />
                 <token key="htmlfooter" value="${htmlfooter}" />
+                <token key="htmltopmenu" value="${htmltopmenu}" />
                 </replacetokens>
             </filterchain>
         </copy>
-
+        
         <echo msg="Succeed!" />
     </target>
     <target name="deploy">
@@ -64,5 +117,22 @@
         <copy todir="${deploydir}">
             <fileset refid="buildfiles" />
         </copy>
+    </target>
+    <target name="clean">
+        <if>
+            <available file="${builddir}" type="dir" />
+            <then>
+                <echo msg="Clearing old build directory ${builddir} ..." />
+                <delete dir="${builddir}" />
+            </then>
+        </if>
+        <if>
+            <available file="header-sub.html" type="file" />
+            <then>
+                <echo msg="Deleting old header-sub.html ..." />
+                <delete file="header-sub.html" />
+            </then>
+        </if>
+        <echo msg="Succeed!" />
     </target>
 </project>
